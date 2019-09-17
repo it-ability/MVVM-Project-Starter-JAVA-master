@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+
+        <variable
+            name="model"
+            type="com.aditp.mdvkarch.data.model.user_repos.ResponseRepos" />
+
+    </data>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/spacing_middle">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_large">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@{model.name, default=`Repo Name`}"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5" />
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@{String.format(`Language %s`, model.language)}"
+                android:textColor="@color/mdvk_main" />
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@{String.format(`Start %d`, model.stargazersCount)}"
+                android:textColor="@color/htmlForestGreen" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+</layout>

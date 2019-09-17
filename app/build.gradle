@@ -1,0 +1,191 @@
+import java.util.regex.Pattern
+
+apply plugin: 'com.android.application'
+
+// ---------------------------------------------------------------------------
+// Function Auto Increment VersionCode
+// ---------------------------------------------------------------------------
+def getIncrementationVersionCode() {
+    def versionPropsFile = file('version.properties')
+
+    if (versionPropsFile.canRead()) {
+        Properties versionProps = new Properties()
+
+        versionProps.load(new FileInputStream(versionPropsFile))
+
+        def code = versionProps['VERSION_CODE'].toInteger() + 1
+
+        versionProps['VERSION_CODE'] = code.toString()
+        versionProps.store(versionPropsFile.newWriter(), null)
+
+        return code
+    } else {
+        throw new GradleException("Could not read version.properties!")
+    }
+    //noinspection GroovyUnreachableStatement
+    return 1
+
+
+}
+
+
+// ---------------------------------------------------------------------------
+// Function Auto Increment VersionName
+// ---------------------------------------------------------------------------
+def getIncrementationVersionName() {
+    List<String> runTasks = gradle.startParameter.getTaskNames()
+
+    //find version name in manifest
+    def manifestFile = file('src/main/AndroidManifest.xml')
+    def matcher = Pattern.compile('versionName=\"(\\d+)\\.(\\d+)\\.(\\d+)\"').matcher(manifestFile.getText())
+    matcher.find()
+
+    //extract versionName parts
+    def firstPart = Integer.parseInt(matcher.group(1))
+    def secondPart = Integer.parseInt(matcher.group(2))
+    def thirdPart = Integer.parseInt(matcher.group(3))
+
+    //check is runTask release or not
+    // if release - increment version
+    for (String item : runTasks) {
+        if (item.contains("assemble") && item.contains("Release")) {
+            thirdPart++
+            if (thirdPart == 10) {
+                thirdPart = 0
+                secondPart++
+                if (secondPart == 10) {
+                    secondPart = 0
+                    firstPart++
+                }
+            }
+        }
+    }
+
+    def versionName = firstPart + "." + secondPart + "." + thirdPart
+
+    // update manifest
+    def manifestContent = matcher.replaceAll('versionName=\"' + versionName + '\"')
+    manifestFile.write(manifestContent)
+
+    println "incrementVersionName = " + versionName
+
+    return versionName
+}
+
+
+android {
+
+    compileSdkVersion 28
+
+
+    defaultConfig {
+        applicationId "com.aditp.mdvkarch"
+        minSdkVersion 21
+        targetSdkVersion 28
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
+        vectorDrawables.useSupportLibrary = true
+
+        def codes = getIncrementationVersionCode()
+        versionCode 1  // replace `codes` when release
+        def version = getIncrementationVersionName()
+        versionName version
+
+    }
+
+    dataBinding {
+        enabled = true
+    }
+
+    compileOptions {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            // auto rename output
+            android.applicationVariants.all { variant ->
+                variant.outputs.all {
+                    outputFileName = "${variant.name}-${variant.versionName}.apk"
+                }
+            }
+        }
+    }
+
+}
+
+dependencies {
+    // Core {androidX}
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.1.0-rc01'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.0-beta2'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0-alpha02'
+    implementation 'androidx.vectordrawable:vectordrawable:1.1.0-rc01'
+    implementation 'com.android.support:multidex:1.0.3'
+    implementation 'com.google.android.material:material:1.1.0-alpha08'
+
+    // RXJava2 & Networking
+    implementation 'com.amitshekhar.android:rx2-android-networking:1.0.2'
+    implementation 'com.facebook.stetho:stetho-okhttp3:1.5.1'
+    implementation 'com.facebook.stetho:stetho:1.5.1'
+    implementation 'com.github.abehbatre:MDVK-Kit:1.0.3'
+    implementation 'com.github.instacart.truetime-android:library-extension-rx:3.4'
+    implementation 'com.github.mike14u:shimmer-recyclerview-x:1.0.1'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+    implementation 'io.reactivex.rxjava2:rxjava:2.2.10'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.8'
+    annotationProcessor 'org.projectlombok:lombok:1.18.8'
+
+    // Google Inc
+    // implementation 'com.google.firebase:firebase-core:17.0.1'
+
+    // Third party dependencies (UI/UX)
+    implementation 'com.amulyakhare:com.amulyakhare.textdrawable:1.0.1'
+    implementation 'com.balysv:material-ripple:1.0.2'
+    implementation 'com.github.chrisbanes:PhotoView:2.3.0'
+    implementation 'com.github.Ferfalk:SimpleSearchView:0.1.4'
+    implementation 'com.github.abehbatre:Fancybuttons:1.9.1'
+    implementation 'com.karumi:dexter:5.0.0'
+    implementation 'de.hdodenhof:circleimageview:3.0.0'
+    implementation 'uk.co.chrisjenx:calligraphy:2.3.0'
+
+    // Glide
+    annotationProcessor 'androidx.annotation:annotation:1.1.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
+    implementation "com.github.bumptech.glide:okhttp3-integration:4.9.0"
+    implementation 'com.github.bumptech.glide:glide:4.9.0'
+
+    // Daimajia
+    implementation 'com.daimajia.androidanimations:library:2.3@aar'
+    implementation 'com.daimajia.easing:library:2.1@aar'
+
+    // Unit Testing
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    testImplementation 'junit:junit:4.12'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.28.2'
+
+    // LeakCanary | for detecting memory leaks
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.6.3'
+    releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.6.3'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-support-fragment:1.6.3'
+    // Disable LeakCanary in tests
+    configurations.all { config ->
+        if (config.name.contains('UnitTest') || config.name.contains('AndroidTest')) {
+            config.resolutionStrategy.eachDependency { details ->
+                if (details.requested.group == 'com.squareup.leakcanary' && details.requested.name == 'leakcanary-android') {
+                    details.useTarget(group: details.requested.group, name: 'leakcanary-android-no-op', version: details.requested.version)
+                }
+            }
+        }
+    }
+
+
+}
